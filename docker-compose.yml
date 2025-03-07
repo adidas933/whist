@@ -1,35 +1,92 @@
+# Define the version of Docker Compose file format
 version: "3.8"
+
+# Define the services that will run as containers
 services:
+  
+  # Define the first application service (app1)
   app1:
     build:
-      context: ./app
-      dockerfile: Dockerfile
+      context: ./app  # Path to the directory containing the app's source code (used for building the image)
+      dockerfile: Dockerfile  # Specify the Dockerfile to use for building the image
     networks:
-      - app-network
+      - app-network  # Connect app1 to the 'app-network' network
+    environment:
+      # Set environment variables required for MySQL connection
+      - MYSQL_HOST=db  # Host for the MySQL service (db service name in Docker Compose)
+      - MYSQL_USER=root  # MySQL user
+      - MYSQL_PASSWORD=1234  # MySQL user password
+      - MYSQL_DATABASE=app_db  # Database to connect to
+      - MYSQL_PORT=3306  # MySQL port
+    depends_on:
+      - db  # app1 depends on the db service, ensuring it starts after db
+  
+  # Define the second application service (app2)
   app2:
     build:
-      context: ./app
-      dockerfile: Dockerfile
+      context: ./app  # Path to the directory containing the app's source code (used for building the image)
+      dockerfile: Dockerfile  # Specify the Dockerfile to use for building the image
     networks:
-      - app-network
+      - app-network  # Connect app2 to the 'app-network' network
+    environment:
+      # Set environment variables required for MySQL connection
+      - MYSQL_HOST=db  # Host for the MySQL service (db service name in Docker Compose)
+      - MYSQL_USER=root  # MySQL user
+      - MYSQL_PASSWORD=1234  # MySQL user password
+      - MYSQL_DATABASE=app_db  # Database to connect to
+    depends_on:
+      - db  # app2 depends on the db service, ensuring it starts after db
+  
+  # Define the third application service (app3)
   app3:
     build:
-      context: ./app
-      dockerfile: Dockerfile
+      context: ./app  # Path to the directory containing the app's source code (used for building the image)
+      dockerfile: Dockerfile  # Specify the Dockerfile to use for building the image
     networks:
-      - app-network
+      - app-network  # Connect app3 to the 'app-network' network
+    environment:
+      # Set environment variables required for MySQL connection
+      - MYSQL_HOST=db  # Host for the MySQL service (db service name in Docker Compose)
+      - MYSQL_USER=root  # MySQL user
+      - MYSQL_PASSWORD=1234  # MySQL user password
+      - MYSQL_DATABASE=app_db  # Database to connect to
+    depends_on:
+      - db  # app3 depends on the db service, ensuring it starts after db
+
+  # Define the nginx service for reverse proxy
   nginx:
-    image: nginx:latest
+    image: nginx:latest  # Use the latest Nginx image from Docker Hub
     volumes:
+      # Mount the custom nginx.conf file from the local machine to the container
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
-      - "80:80"
+      - "80:80"  # Map port 80 on the host machine to port 80 in the container
     networks:
-      - app-network
+      - app-network  # Connect nginx to the 'app-network' network
     depends_on:
-      - app1
-      - app2
-      - app3
+      - app1  # nginx depends on app1, ensuring app1 starts before nginx
+      - app2  # nginx depends on app2, ensuring app2 starts before nginx
+      - app3  # nginx depends on app3, ensuring app3 starts before nginx
+
+  # Define the MySQL database service
+  db:
+    image: mysql:latest  # Use the latest MySQL image from Docker Hub
+    environment:
+      # Set environment variables to initialize MySQL
+      MYSQL_ROOT_PASSWORD: 1234  # Set the root password for MySQL
+      MYSQL_DATABASE: app_db  # Create the 'app_db' database upon MySQL initialization
+    ports:
+      - "3306:3306"  # Map port 3307 on the host machine to port 3306 in the container
+    networks:
+      - app-network  # Connect db to the 'app-network' network
+    healthcheck:
+      # Define a health check for the MySQL container to ensure it's running
+      test: ["CMD", "mysqladmin", "ping", "-h", "db"]  # Check MySQL status by pinging localhost
+      interval: 10s  # Run the health check every 10 seconds
+      retries: 5  # Retry the health check up to 5 times if it fails
+      start_period: 20s  # Start the health check 20 seconds after the container starts
+
+# Define networks used by the services
 networks:
   app-network:
-    driver: bridge
+    driver: bridge  # Use the 'bridge' network driver, which is the default Docker network driver
