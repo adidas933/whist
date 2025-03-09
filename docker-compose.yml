@@ -19,7 +19,8 @@ services:
       - MYSQL_DATABASE=app_db  # Database to connect to
       - MYSQL_PORT=3306  # MySQL port
     depends_on:
-      - db  # app1 depends on the db service, ensuring it starts after db
+      - db
+ # app1 depends on the db service, ensuring it starts after db
   
   # Define the second application service (app2)
   app2:
@@ -36,7 +37,6 @@ services:
       - MYSQL_DATABASE=app_db  # Database to connect to
     depends_on:
       - db  # app2 depends on the db service, ensuring it starts after db
-  
   # Define the third application service (app3)
   app3:
     build:
@@ -51,7 +51,7 @@ services:
       - MYSQL_PASSWORD=1234  # MySQL user password
       - MYSQL_DATABASE=app_db  # Database to connect to
     depends_on:
-      - db  # app3 depends on the db service, ensuring it starts after db
+      - db
 
   # Define the nginx service for reverse proxy
   nginx:
@@ -71,6 +71,8 @@ services:
   # Define the MySQL database service
   db:
     image: mysql:latest  # Use the latest MySQL image from Docker Hub
+    container_name: mysql_container
+    restart: always
     environment:
       # Set environment variables to initialize MySQL
       MYSQL_ROOT_PASSWORD: 1234  # Set the root password for MySQL
@@ -79,6 +81,9 @@ services:
       - "3306:3306"  # Map port 3307 on the host machine to port 3306 in the container
     networks:
       - app-network  # Connect db to the 'app-network' network
+    volumes:
+      - mysql_data:/var/lib/mysql  # Persistent storage for MySQL
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Ensures the table is created
     healthcheck:
       # Define a health check for the MySQL container to ensure it's running
       test: ["CMD", "mysqladmin", "ping", "-h", "db"]  # Check MySQL status by pinging localhost
@@ -90,3 +95,5 @@ services:
 networks:
   app-network:
     driver: bridge  # Use the 'bridge' network driver, which is the default Docker network driver
+volumes:
+  mysql_data:  # Named volume to persist MySQL data

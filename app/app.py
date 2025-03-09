@@ -4,19 +4,18 @@ from flask import Flask, jsonify, request, make_response  # Flask for web framew
 from datetime import datetime, timedelta  # For working with time (timestamp, expiration)
 import socket  # To get internal server IP address
 import time  # To add delays between retries
-
+import logging
 
 # Create Flask app instance
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # MySQL database connection function with retry logic
 def get_db_connection():
-    retries = 10  # Retry up to 10 times for database connection
-    for attempt in range(retries):
         try:
             # Attempt to connect to the MySQL database
             connection = mysql.connector.connect(
-                host="0.0.0.0",  # Hostname where MySQL database is hosted
+                host="db",  # Hostname where MySQL database is hosted
                 user="root",  # Database username
                 password="1234",  # Database password
                 database="app_db"  # The database we are connecting to
@@ -24,9 +23,9 @@ def get_db_connection():
             return connection  # Return connection if successful
         except mysql.connector.Error as err:
             # Log error message if connection fails
-            print(f"Database connection attempt {attempt + 1} failed: {err}")
-            time.sleep(5)  # Wait for 2 seconds before retrying
-    return None  # Return None if all attempts fail
+            logging.error(f"Database connection failed: {err}")
+            print(f"Database connection failed: {err}")
+            return None
 
 # Initialize global counter variable
 global_counter = 0  # Start counter from 0
